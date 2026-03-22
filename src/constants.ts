@@ -1,0 +1,72 @@
+import { DayType, DayMacros } from './types';
+
+export const REFERENCE_WEIGHT = 75.2;
+
+export const MACRO_TARGETS: Record<DayType, DayMacros> = {
+  'Descanso': { kcal: 2050, protein: 160, carbs: 220, fat: 60 },
+  'Gym': { kcal: 2450, protein: 160, carbs: 300, fat: 55 },
+  'Boxeo': { kcal: 2600, protein: 160, carbs: 340, fat: 55 },
+  'Gym + Boxeo': { kcal: 3000, protein: 170, carbs: 400, fat: 65 },
+};
+
+export const IMAGES = {
+  breakfast: "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?auto=format&fit=crop&q=80&w=800", // Bowl cereals
+  pasta_calabaza: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&q=80&w=800",
+  pollo_patata: "https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&q=80&w=800",
+  arroz_pollo: "https://images.unsplash.com/photo-1512058560366-cd2427ff56f3?auto=format&fit=crop&q=80&w=800",
+  bocadillo_tortilla: "https://images.unsplash.com/photo-1539252554452-da624502da58?auto=format&fit=crop&q=80&w=800",
+  macarrones_atun: "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&q=80&w=800",
+  sopa_fideos: "https://images.unsplash.com/photo-1547592110-8036e3c2b853?auto=format&fit=crop&q=80&w=800",
+  quinoa_pollo: "https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&q=80&w=800",
+  tortilla_centeno: "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&q=80&w=800",
+  ensalada_alubias: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=800",
+  crema_calabacin: "https://images.unsplash.com/photo-1547592166-83ac45744acd?auto=format&fit=crop&q=80&w=800",
+  arroz_cubana: "https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?auto=format&fit=crop&q=80&w=800",
+  pizza: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=800",
+  espaguetis_integrales: "https://images.unsplash.com/photo-1473093226795-af9932fe5856?auto=format&fit=crop&q=80&w=800",
+  smoothie: "https://images.unsplash.com/photo-1553530666-ba11a7da3888?auto=format&fit=crop&q=80&w=800",
+};
+
+// Nutritional data per 100g (approximate)
+export const NUTRITION = {
+  leche_desnatada: { kcal: 35, p: 3.4, c: 4.8, f: 0.1 },
+  copos_maiz: { kcal: 360, p: 7, c: 80, f: 1 },
+  platano: { kcal: 89, p: 1.1, c: 23, f: 0.3 },
+  nueces: { kcal: 654, p: 15, c: 14, f: 65 },
+  queso_batido: { kcal: 46, p: 8, c: 3.5, f: 0.1 },
+  anacardos: { kcal: 553, p: 18, c: 30, f: 44 },
+  proteina_polvo: { kcal: 370, p: 80, c: 5, f: 3 },
+  farfalle: { kcal: 355, p: 12, c: 72, f: 1.5 },
+  calabaza: { kcal: 26, p: 1, c: 6.5, f: 0.1 },
+  mozzarella_fresca: { kcal: 280, p: 18, c: 2, f: 22 },
+  lechuga: { kcal: 15, p: 1.4, c: 2.9, f: 0.2 },
+  aceite_oliva: { kcal: 884, p: 0, c: 0, f: 100 },
+  pechuga_pollo: { kcal: 165, p: 31, c: 0, f: 3.6 },
+  cebolla: { kcal: 40, p: 1.1, c: 9, f: 0.1 },
+  patata: { kcal: 77, p: 2, c: 17, f: 0.1 },
+  pimenton: { kcal: 282, p: 14, c: 54, f: 13 },
+  arroz_blanco: { kcal: 365, p: 7, c: 80, f: 0.7 },
+  calabacin: { kcal: 17, p: 1.2, c: 3.1, f: 0.3 },
+  pan: { kcal: 265, p: 9, c: 49, f: 3 },
+  huevo: { kcal: 155, p: 13, c: 1.1, f: 11 },
+  tomate_rallado: { kcal: 18, p: 0.9, c: 3.9, f: 0.2 },
+  macarrones: { kcal: 350, p: 12, c: 70, f: 1.5 },
+  atun_natural: { kcal: 116, p: 26, c: 0, f: 1 },
+  salsa_tomate: { kcal: 50, p: 1.5, c: 8, f: 1 },
+  fideos: { kcal: 350, p: 12, c: 70, f: 1.5 },
+  caldo: { kcal: 10, p: 1, c: 1, f: 0.2 },
+  quinoa: { kcal: 368, p: 14, c: 64, f: 6 },
+  boniato: { kcal: 86, p: 1.6, c: 20, f: 0.1 },
+  tomates_cherry: { kcal: 18, p: 0.9, c: 3.9, f: 0.2 },
+  aguacate: { kcal: 160, p: 2, c: 9, f: 15 },
+  pan_centeno: { kcal: 259, p: 8.5, c: 48, f: 3.3 },
+  queso_untar: { kcal: 230, p: 6, c: 4, f: 21 },
+  tomate: { kcal: 18, p: 0.9, c: 3.9, f: 0.2 },
+  alubias_cocidas: { kcal: 139, p: 9.7, c: 25, f: 0.5 },
+  tomate_triturado: { kcal: 25, p: 1.2, c: 4.5, f: 0.2 },
+  masa_pizza: { kcal: 270, p: 8, c: 50, f: 4 },
+  mozzarella_rallada: { kcal: 300, p: 22, c: 2, f: 24 },
+  albahaca: { kcal: 23, p: 3.2, c: 2.7, f: 0.6 },
+  espaguetis_integrales: { kcal: 330, p: 13, c: 65, f: 2.5 },
+  levadura_nutricional: { kcal: 400, p: 50, c: 35, f: 5 },
+};
