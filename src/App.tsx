@@ -157,19 +157,33 @@ export default function App() {
             </span>
           </div>
         </div>
-        <div className="flex space-x-2">
-          <button 
-            onClick={() => setSelectedDay(prev => (prev > 0 ? prev - 1 : 6))}
-            className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 hover:bg-slate-50 transition-colors"
+
+        <div className="flex items-center space-x-3">
+          <select
+            value={selectedDay}
+            onChange={(e) => setSelectedDay(parseInt(e.target.value, 10))}
+            className="px-3 py-2 rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+            aria-label="Seleccionar día"
           >
-            <ChevronLeft size={20} />
-          </button>
-          <button 
-            onClick={() => setSelectedDay(prev => (prev < 6 ? prev + 1 : 0))}
-            className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 hover:bg-slate-50 transition-colors"
-          >
-            <ChevronRight size={20} />
-          </button>
+            {DAYS.map((day, index) => (
+              <option key={day} value={index}>{day}</option>
+            ))}
+          </select>
+
+          <div className="flex space-x-2">
+            <button 
+              onClick={() => setSelectedDay(prev => (prev > 0 ? prev - 1 : 6))}
+              className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 hover:bg-slate-50 transition-colors"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button 
+              onClick={() => setSelectedDay(prev => (prev < 6 ? prev + 1 : 0))}
+              className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 hover:bg-slate-50 transition-colors"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
         </div>
       </header>
 
