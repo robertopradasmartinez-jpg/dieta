@@ -25,22 +25,35 @@ export const getBaseDailyPlan = (dayName: string, trainingType: DayType): DailyP
   };
 
   // Snack logic
-  const snackAnacardos = {
-    'Descanso': 20,
-    'Gym': 25,
-    'Boxeo': 25,
-    'Gym + Boxeo': 30
+  const snackPanIntegral = {
+    'Descanso': 40,
+    'Gym': 50,
+    'Boxeo': 60,
+    'Gym + Boxeo': 70
+  }[trainingType];
+
+  const snackQuesoAmount = {
+    'Descanso': 100,
+    'Gym': 125,
+    'Boxeo': 140,
+    'Gym + Boxeo': 150
+  }[trainingType];
+
+  const snackMantequillaAmount = {
+    'Descanso': 15,
+    'Gym': 20,
+    'Boxeo': 22,
+    'Gym + Boxeo': 25
   }[trainingType];
 
   const snack: any = {
-    name: "Smoothie proteico",
-    image: IMAGES.smoothie,
+    name: "Pan integral con queso y mantequilla de cacahuete",
+    image: IMAGES.breakfast,
     ingredients: [
-      createIng('leche_desnatada', 'Leche desnatada', 200, 'ml'),
-      createIng('queso_batido', 'Queso batido 0%', 125, 'g'),
-      createIng('platano', 'Plátano', 120, 'g'),
-      createIng('anacardos', 'Anacardos', snackAnacardos, 'g'),
+      createIng('pan_integral', 'Pan integral', snackPanIntegral, 'g'),
+      createIng('queso_batido', 'Queso fresco batido', snackQuesoAmount, 'g'),
       createIng('proteina_polvo', 'Proteína en polvo', 30, 'g'),
+      createIng('mantequilla_cacahuete', 'Mantequilla de cacahuete', snackMantequillaAmount, 'g'),
     ]
   };
 

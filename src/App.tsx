@@ -25,8 +25,16 @@ import { getMealMacros, formatNumber, getAdjustedDayData, calculateBMR, calculat
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 export default function App() {
-  const [view, setView] = useState<'diet' | 'planner' | 'profile' | 'progress'>('diet');
-  const [selectedDay, setSelectedDay] = useState(0);
+  const [view, setView] = useState<'diet' | 'planner' | 'profile' | 'progress'>(() => {
+    const savedView = localStorage.getItem('nutrifit_view');
+    return (savedView as 'diet' | 'planner' | 'profile' | 'progress') || 'diet';
+  });
+
+  const [selectedDay, setSelectedDay] = useState(() => {
+    const savedDay = localStorage.getItem('nutrifit_selectedDay');
+    return savedDay ? parseInt(savedDay, 10) : 0;
+  });
+
   const [user, setUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('nutrifit_user');
     return saved ? JSON.parse(saved) : {
@@ -59,6 +67,14 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('nutrifit_plan', JSON.stringify(weeklyPlan));
   }, [weeklyPlan]);
+
+  useEffect(() => {
+    localStorage.setItem('nutrifit_selectedDay', selectedDay.toString());
+  }, [selectedDay]);
+
+  useEffect(() => {
+    localStorage.setItem('nutrifit_view', view);
+  }, [view]);
 
   const currentDayPlan = useMemo(() => {
     const dayName = DAYS[selectedDay];

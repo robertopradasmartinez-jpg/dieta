@@ -69,4 +69,6 @@ export const NUTRITION = {
   albahaca: { kcal: 23, p: 3.2, c: 2.7, f: 0.6 },
   espaguetis_integrales: { kcal: 330, p: 13, c: 65, f: 2.5 },
   levadura_nutricional: { kcal: 400, p: 50, c: 35, f: 5 },
+  pan_integral: { kcal: 265, p: 10, c: 48, f: 3.5 },
+  mantequilla_cacahuete: { kcal: 588, p: 25, c: 20, f: 50 },
 };
