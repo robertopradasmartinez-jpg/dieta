@@ -71,4 +71,5 @@ export const NUTRITION = {
   levadura_nutricional: { kcal: 400, p: 50, c: 35, f: 5 },
   pan_integral: { kcal: 265, p: 10, c: 48, f: 3.5 },
   mantequilla_cacahuete: { kcal: 588, p: 25, c: 20, f: 50 },
+  lonchas_pavo: { kcal: 120, p: 24, c: 1, f: 2 },
 };
