@@ -47,13 +47,12 @@ export const getBaseDailyPlan = (dayName: string, trainingType: DayType): DailyP
   }[trainingType];
 
   const snack: any = {
-    name: "Pan integral con queso y mantequilla de cacahuete",
+    name: "Pan integral con mantequilla de cacahuete y lonchas de pavo",
     image: IMAGES.breakfast,
     ingredients: [
       createIng('pan_integral', 'Pan integral', snackPanIntegral, 'g'),
-      createIng('queso_batido', 'Queso fresco batido', snackQuesoAmount, 'g'),
-      createIng('proteina_polvo', 'Proteína en polvo', 30, 'g'),
       createIng('mantequilla_cacahuete', 'Mantequilla de cacahuete', snackMantequillaAmount, 'g'),
+      createIng('lonchas_pavo', 'Lonchas de pavo', snackQuesoAmount, 'g'),
     ]
   };
 
