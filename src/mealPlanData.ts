@@ -32,11 +32,25 @@ export const getBaseDailyPlan = (dayName: string, trainingType: DayType): DailyP
     'Gym + Boxeo': 70
   }[trainingType];
 
+  const snackPavoAmount = {
+    'Descanso': 50,
+    'Gym': 60,
+    'Boxeo': 70,
+    'Gym + Boxeo': 80
+  }[trainingType];
+
   const snackQuesoAmount = {
-    'Descanso': 100,
-    'Gym': 125,
-    'Boxeo': 140,
-    'Gym + Boxeo': 150
+    'Descanso': 60,
+    'Gym': 70,
+    'Boxeo': 80,
+    'Gym + Boxeo': 90
+  }[trainingType];
+
+  const snackAnacardosAmount = {
+    'Descanso': 20,
+    'Gym': 25,
+    'Boxeo': 30,
+    'Gym + Boxeo': 35
   }[trainingType];
 
   const snackMantequillaAmount = {
@@ -47,12 +61,14 @@ export const getBaseDailyPlan = (dayName: string, trainingType: DayType): DailyP
   }[trainingType];
 
   const snack: any = {
-    name: "Pan integral con mantequilla de cacahuete y lonchas de pavo",
+    name: "Pan integral con mantequilla de cacahuete, pavo, queso batido y anacardos",
     image: IMAGES.breakfast,
     ingredients: [
       createIng('pan_integral', 'Pan integral', snackPanIntegral, 'g'),
       createIng('mantequilla_cacahuete', 'Mantequilla de cacahuete', snackMantequillaAmount, 'g'),
-      createIng('lonchas_pavo', 'Lonchas de pavo', snackQuesoAmount, 'g'),
+      createIng('lonchas_pavo', 'Lonchas de pavo', snackPavoAmount, 'g'),
+      createIng('queso_batido', 'Queso fresco batido', snackQuesoAmount, 'g'),
+      createIng('anacardos', 'Anacardos', snackAnacardosAmount, 'g'),
     ]
   };
 

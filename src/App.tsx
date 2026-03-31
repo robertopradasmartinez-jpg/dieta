@@ -366,6 +366,7 @@ export default function App() {
               <label className="text-sm font-bold text-slate-400 uppercase tracking-widest">Peso Actual (kg)</label>
               <input 
                 type="number" 
+                step="0.1"
                 value={user.weight}
                 onChange={(e) => {
                   const val = parseFloat(e.target.value);
