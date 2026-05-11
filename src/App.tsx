@@ -1,563 +1,706 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  User, 
-  Settings, 
-  Calendar, 
-  Utensils, 
-  TrendingUp, 
-  ChevronRight, 
-  ChevronLeft, 
-  Plus, 
-  Save,
-  Dumbbell,
-  Zap,
-  Moon,
-  Info,
-  Edit3,
-  Check
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { UserProfile, WeeklyPlan, DayType, DailyPlan, DayMacros } from './types';
-import { MACRO_TARGETS, REFERENCE_WEIGHT } from './constants';
-import { getBaseDailyPlan } from './mealPlanData';
-import { getMealMacros, formatNumber, getAdjustedDayData, calculateBMR, calculateTargetMacros } from './utils';
+import { useEffect, useMemo, useState } from 'react';
+import { CalendarDays, ChevronLeft, ChevronRight, Coffee, Moon, Soup, Utensils } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 
-const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+type MacroSet = {
+  protein: number;
+  carbs: number;
+  fat: number;
+  kcal: number;
+};
+
+type Food = MacroSet & {
+  name: string;
+  amount: string;
+};
+
+type Meal = MacroSet & {
+  title: string;
+  note: string;
+  accent: string;
+  items: Food[];
+};
+
+type DayPlan = {
+  day: string;
+  meals: Meal[];
+};
+
+const weekPlan: DayPlan[] = [
+  {
+    day: 'Lunes',
+    meals: [
+      {
+        title: 'Desayuno',
+        note: 'Base alta en proteína',
+        accent: 'from-sky-500 to-cyan-400',
+        protein: 9.92,
+        carbs: 26.38,
+        fat: 27.06,
+        kcal: 300,
+        items: [
+          { name: 'Queso Cottage', amount: '100 g', protein: 4.51, carbs: 2.68, fat: 12.49, kcal: 103 },
+          { name: 'Clara de Huevo', amount: '2 grandes', protein: 0.11, carbs: 0.48, fat: 7.19, kcal: 34 },
+          { name: 'Plátano', amount: '100 g', protein: 0.33, carbs: 22.84, fat: 1.09, kcal: 89 },
+          { name: 'Huevo', amount: '1 grande', protein: 4.97, carbs: 0.38, fat: 6.29, kcal: 74 },
+        ],
+      },
+      {
+        title: 'Almuerzo',
+        note: 'Pasta con tomate',
+        accent: 'from-emerald-500 to-lime-400',
+        protein: 2.03,
+        carbs: 102.56,
+        fat: 16.07,
+        kcal: 491,
+        items: [
+          { name: 'Plátano', amount: '100 g', protein: 0.33, carbs: 22.84, fat: 1.09, kcal: 89 },
+          { name: 'Hacendado Tomate Triturado', amount: '100 g', protein: 0, carbs: 3.8, fat: 1.1, kcal: 23 },
+          { name: 'Tomates Cherry', amount: '100 g', protein: 0.2, carbs: 3.92, fat: 0.88, kcal: 18 },
+          { name: 'Hacendado Macarrones', amount: '100 g', protein: 1.5, carbs: 72, fat: 13, kcal: 361 },
+        ],
+      },
+      {
+        title: 'Cena',
+        note: 'Tostada dulce y café',
+        accent: 'from-amber-500 to-orange-400',
+        protein: 7.78,
+        carbs: 28.84,
+        fat: 13.45,
+        kcal: 247,
+        items: [
+          { name: 'Café', amount: '1 taza (240 ml)', protein: 0.05, carbs: 0.09, fat: 0.28, kcal: 2 },
+          { name: 'Hacendado Leche Desnatada sin Lactosa', amount: '150 ml', protein: 0.45, carbs: 7.05, fat: 4.65, kcal: 51 },
+          { name: 'Hacendado Panecillo 100% Integral', amount: '47 g', protein: 0.7, carbs: 20.02, fat: 4.32, kcal: 110 },
+          { name: 'Hacendado Mantequilla de Cacahuete 100%', amount: '14 g', protein: 6.58, carbs: 1.68, fat: 4.2, kcal: 84 },
+        ],
+      },
+      {
+        title: 'Pasa Bocas / Otros',
+        note: 'Sin extra',
+        accent: 'from-slate-500 to-slate-400',
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        kcal: 0,
+        items: [],
+      },
+    ],
+  },
+  {
+    day: 'Martes',
+    meals: [
+      {
+        title: 'Desayuno',
+        note: 'Base alta en proteína',
+        accent: 'from-sky-500 to-cyan-400',
+        protein: 9.92,
+        carbs: 26.38,
+        fat: 27.06,
+        kcal: 300,
+        items: [
+          { name: 'Queso Cottage', amount: '100 g', protein: 4.51, carbs: 2.68, fat: 12.49, kcal: 103 },
+          { name: 'Clara de Huevo', amount: '2 grandes', protein: 0.11, carbs: 0.48, fat: 7.19, kcal: 34 },
+          { name: 'Plátano', amount: '100 g', protein: 0.33, carbs: 22.84, fat: 1.09, kcal: 89 },
+          { name: 'Huevo', amount: '1 grande', protein: 4.97, carbs: 0.38, fat: 6.29, kcal: 74 },
+        ],
+      },
+      {
+        title: 'Almuerzo',
+        note: 'Arroz con pollo',
+        accent: 'from-emerald-500 to-lime-400',
+        protein: 21.32,
+        carbs: 57.74,
+        fat: 71.5,
+        kcal: 731,
+        items: [
+          { name: 'Huevo', amount: '1 grande', protein: 4.97, carbs: 0.38, fat: 6.29, kcal: 74 },
+          { name: 'La Fallera Arroz Redondo', amount: '70 g', protein: 0.91, carbs: 53.9, fat: 5.11, kcal: 246 },
+          { name: 'Hacendado Tomate Triturado', amount: '91 g', protein: 3.46, carbs: 1, fat: 21, kcal: 21 },
+          { name: 'Pechuga de Pollo', amount: '200 g', protein: 15.44, carbs: 59.1, fat: 0, kcal: 390 },
+        ],
+      },
+      {
+        title: 'Cena',
+        note: 'Tostada dulce y café',
+        accent: 'from-amber-500 to-orange-400',
+        protein: 7.78,
+        carbs: 28.84,
+        fat: 13.45,
+        kcal: 247,
+        items: [
+          { name: 'Hacendado Mantequilla de Cacahuete 100%', amount: '14 g', protein: 6.58, carbs: 1.68, fat: 4.2, kcal: 84 },
+          { name: 'Hacendado Panecillo 100% Integral', amount: '47 g', protein: 0.7, carbs: 20.02, fat: 4.32, kcal: 110 },
+          { name: 'Hacendado Leche Desnatada sin Lactosa', amount: '150 ml', protein: 0.45, carbs: 7.05, fat: 4.65, kcal: 51 },
+          { name: 'Café', amount: '1 taza (240 ml)', protein: 0.05, carbs: 0.09, fat: 0.28, kcal: 2 },
+        ],
+      },
+      {
+        title: 'Pasa Bocas / Otros',
+        note: 'Pizza rápida',
+        accent: 'from-violet-500 to-fuchsia-400',
+        protein: 11.69,
+        carbs: 80.1,
+        fat: 24.65,
+        kcal: 525,
+        items: [
+          { name: 'Tomates Cherry', amount: '100 g', protein: 0.2, carbs: 3.92, fat: 0.88, kcal: 18 },
+          { name: 'Hacendado Tomate Triturado', amount: '100 g', protein: 0, carbs: 3.8, fat: 1.1, kcal: 23 },
+          { name: 'Mercadona Mozzarella Light', amount: '60 g', protein: 5.4, carbs: 0.6, fat: 10.2, kcal: 92 },
+          { name: 'Hacendado Masa Fresca Pizza', amount: '145 g', protein: 6.09, carbs: 71.78, fat: 12.47, kcal: 392 },
+        ],
+      },
+    ],
+  },
+  {
+    day: 'Miércoles',
+    meals: [
+      {
+        title: 'Desayuno',
+        note: 'Base alta en proteína',
+        accent: 'from-sky-500 to-cyan-400',
+        protein: 9.92,
+        carbs: 26.38,
+        fat: 27.06,
+        kcal: 300,
+        items: [
+          { name: 'Queso Cottage', amount: '100 g', protein: 4.51, carbs: 2.68, fat: 12.49, kcal: 103 },
+          { name: 'Clara de Huevo', amount: '2 grandes', protein: 0.11, carbs: 0.48, fat: 7.19, kcal: 34 },
+          { name: 'Plátano', amount: '100 g', protein: 0.33, carbs: 22.84, fat: 1.09, kcal: 89 },
+          { name: 'Huevo', amount: '1 grande', protein: 4.97, carbs: 0.38, fat: 6.29, kcal: 74 },
+        ],
+      },
+      {
+        title: 'Almuerzo',
+        note: 'Ensalada de alubias y atún',
+        accent: 'from-emerald-500 to-lime-400',
+        protein: 7.77,
+        carbs: 67.14,
+        fat: 45.77,
+        kcal: 545,
+        items: [
+          { name: 'Hacendado Alubia Pinta Cocida', amount: '300 g', protein: 1.2, carbs: 39.3, fat: 18.6, kcal: 279 },
+          { name: 'Tomates', amount: '100 g', protein: 0.2, carbs: 3.92, fat: 0.88, kcal: 18 },
+          { name: 'Plátano', amount: '100 g', protein: 0.33, carbs: 22.84, fat: 1.09, kcal: 89 },
+          { name: 'Hacendado Atún Claro al Natural', amount: '120 g', protein: 1.44, carbs: 1.08, fat: 25.2, kcal: 118 },
+          { name: 'Aceite de Oliva', amount: '5 ml', protein: 4.6, carbs: 0, fat: 0, kcal: 41 },
+        ],
+      },
+      {
+        title: 'Cena',
+        note: 'Tostada dulce y café',
+        accent: 'from-amber-500 to-orange-400',
+        protein: 7.78,
+        carbs: 28.84,
+        fat: 13.45,
+        kcal: 247,
+        items: [
+          { name: 'Café', amount: '1 taza (240 ml)', protein: 0.05, carbs: 0.09, fat: 0.28, kcal: 2 },
+          { name: 'Hacendado Leche Desnatada sin Lactosa', amount: '150 ml', protein: 0.45, carbs: 7.05, fat: 4.65, kcal: 51 },
+          { name: 'Hacendado Panecillo 100% Integral', amount: '47 g', protein: 0.7, carbs: 20.02, fat: 4.32, kcal: 110 },
+          { name: 'Hacendado Mantequilla de Cacahuete 100%', amount: '14 g', protein: 6.58, carbs: 1.68, fat: 4.2, kcal: 84 },
+        ],
+      },
+      {
+        title: 'Pasa Bocas / Otros',
+        note: 'Wrap de pollo',
+        accent: 'from-violet-500 to-fuchsia-400',
+        protein: 32.58,
+        carbs: 32.5,
+        fat: 70.57,
+        kcal: 721,
+        items: [
+          { name: 'Hacendado Mozzarella Fresca', amount: '125 g', protein: 17.5, carbs: 2.5, fat: 21.25, kcal: 252 },
+          { name: 'Hacendado Maxi Tortillas de Trigo', amount: '1 tortilla, 62 g', protein: 3.5, carbs: 30, fat: 5, kcal: 176 },
+          { name: 'Pechuga de Pollo', amount: '150 g', protein: 11.58, carbs: 0, fat: 44.32, kcal: 293 },
+        ],
+      },
+    ],
+  },
+  {
+    day: 'Jueves',
+    meals: [
+      {
+        title: 'Desayuno',
+        note: 'Base alta en proteína',
+        accent: 'from-sky-500 to-cyan-400',
+        protein: 9.92,
+        carbs: 26.38,
+        fat: 27.06,
+        kcal: 300,
+        items: [
+          { name: 'Queso Cottage', amount: '100 g', protein: 4.51, carbs: 2.68, fat: 12.49, kcal: 103 },
+          { name: 'Clara de Huevo', amount: '2 grandes', protein: 0.11, carbs: 0.48, fat: 7.19, kcal: 34 },
+          { name: 'Plátano', amount: '100 g', protein: 0.33, carbs: 22.84, fat: 1.09, kcal: 89 },
+          { name: 'Huevo', amount: '1 grande', protein: 4.97, carbs: 0.38, fat: 6.29, kcal: 74 },
+        ],
+      },
+      {
+        title: 'Almuerzo',
+        note: 'Bowl de quinoa y pollo',
+        accent: 'from-emerald-500 to-lime-400',
+        protein: 26.05,
+        carbs: 106.75,
+        fat: 73.53,
+        kcal: 959,
+        items: [
+          { name: 'Quinoa', amount: '80 g', protein: 4.64, carbs: 55.12, fat: 10.48, kcal: 299 },
+          { name: 'Boniato', amount: '200 g', protein: 1.2, carbs: 48.38, fat: 3.22, kcal: 214 },
+          { name: 'Tomates Cherry', amount: '83 g', protein: 0.17, carbs: 3.25, fat: 0.73, kcal: 15 },
+          { name: 'Pechuga de Pollo', amount: '200 g', protein: 15.44, carbs: 0, fat: 59.1, kcal: 390 },
+          { name: 'Aceite de Oliva', amount: '5 ml', protein: 4.6, carbs: 0, fat: 0, kcal: 41 },
+        ],
+      },
+      {
+        title: 'Cena',
+        note: 'Tostada dulce y café',
+        accent: 'from-amber-500 to-orange-400',
+        protein: 7.78,
+        carbs: 28.84,
+        fat: 13.45,
+        kcal: 247,
+        items: [
+          { name: 'Hacendado Mantequilla de Cacahuete 100%', amount: '14 g', protein: 6.58, carbs: 1.68, fat: 4.2, kcal: 84 },
+          { name: 'Hacendado Panecillo 100% Integral', amount: '47 g', protein: 0.7, carbs: 20.02, fat: 4.32, kcal: 110 },
+          { name: 'Hacendado Leche Desnatada sin Lactosa', amount: '150 ml', protein: 0.45, carbs: 7.05, fat: 4.65, kcal: 51 },
+          { name: 'Café', amount: '1 taza (240 ml)', protein: 0.05, carbs: 0.09, fat: 0.28, kcal: 2 },
+        ],
+      },
+      {
+        title: 'Pasa Bocas / Otros',
+        note: 'Tosta ligera',
+        accent: 'from-violet-500 to-fuchsia-400',
+        protein: 8.97,
+        carbs: 40.91,
+        fat: 14.16,
+        kcal: 299,
+        items: [
+          { name: 'Hacendado Queso de Untar Light', amount: '25 g', protein: 2.08, carbs: 1.2, fat: 2.25, kcal: 32 },
+          { name: 'Cebollas', amount: '100 g', protein: 0.08, carbs: 10.11, fat: 0.92, kcal: 42 },
+          { name: 'Pan Blanco', amount: '50 g', protein: 1.64, carbs: 25.3, fat: 3.82, kcal: 133 },
+          { name: 'Tomates', amount: '100 g', protein: 0.2, carbs: 3.92, fat: 0.88, kcal: 18 },
+          { name: 'Huevo', amount: '1 grande', protein: 4.97, carbs: 0.38, fat: 6.29, kcal: 74 },
+        ],
+      },
+    ],
+  },
+  {
+    day: 'Viernes',
+    meals: [
+      {
+        title: 'Desayuno',
+        note: 'Base alta en proteína',
+        accent: 'from-sky-500 to-cyan-400',
+        protein: 9.92,
+        carbs: 26.38,
+        fat: 27.06,
+        kcal: 300,
+        items: [
+          { name: 'Queso Cottage', amount: '100 g', protein: 4.51, carbs: 2.68, fat: 12.49, kcal: 103 },
+          { name: 'Clara de Huevo', amount: '2 grandes', protein: 0.11, carbs: 0.48, fat: 7.19, kcal: 34 },
+          { name: 'Plátano', amount: '100 g', protein: 0.33, carbs: 22.84, fat: 1.09, kcal: 89 },
+          { name: 'Huevo', amount: '1 grande', protein: 4.97, carbs: 0.38, fat: 6.29, kcal: 74 },
+        ],
+      },
+      {
+        title: 'Almuerzo',
+        note: 'Macarrones con atún',
+        accent: 'from-emerald-500 to-lime-400',
+        protein: 7.54,
+        carbs: 76.54,
+        fat: 39.2,
+        kcal: 541,
+        items: [
+          { name: 'Aceite de Oliva', amount: '5 ml', protein: 4.6, carbs: 0, fat: 0, kcal: 41 },
+          { name: 'Hacendado Tomate Triturado', amount: '91 g', protein: 0, carbs: 3.46, fat: 1, kcal: 21 },
+          { name: 'Hacendado Atún Claro al Natural', amount: '120 g', protein: 1.44, carbs: 1.08, fat: 25.2, kcal: 118 },
+          { name: 'Hacendado Macarrones', amount: '100 g', protein: 1.5, carbs: 72, fat: 13, kcal: 361 },
+        ],
+      },
+      {
+        title: 'Cena',
+        note: 'Tostada dulce y café',
+        accent: 'from-amber-500 to-orange-400',
+        protein: 7.78,
+        carbs: 28.84,
+        fat: 13.45,
+        kcal: 247,
+        items: [
+          { name: 'Hacendado Leche Desnatada sin Lactosa', amount: '150 ml', protein: 0.45, carbs: 7.05, fat: 4.65, kcal: 51 },
+          { name: 'Café', amount: '1 taza (240 ml)', protein: 0.05, carbs: 0.09, fat: 0.28, kcal: 2 },
+          { name: 'Hacendado Panecillo 100% Integral', amount: '47 g', protein: 0.7, carbs: 20.02, fat: 4.32, kcal: 110 },
+          { name: 'Hacendado Mantequilla de Cacahuete 100%', amount: '14 g', protein: 6.58, carbs: 1.68, fat: 4.2, kcal: 84 },
+        ],
+      },
+      {
+        title: 'Pasa Bocas / Otros',
+        note: 'Pollo con mozzarella',
+        accent: 'from-violet-500 to-fuchsia-400',
+        protein: 37.37,
+        carbs: 7.12,
+        fat: 80.07,
+        kcal: 696,
+        items: [
+          { name: 'Pechuga de Pollo', amount: '190 g', protein: 14.67, carbs: 0, fat: 56.14, kcal: 371 },
+          { name: 'Aceite de Oliva', amount: '5 ml', protein: 4.6, carbs: 0, fat: 0, kcal: 41 },
+          { name: 'Hacendado Mozzarella Fresca', amount: '125 g', protein: 17.5, carbs: 2.5, fat: 21.25, kcal: 252 },
+          { name: 'Tomates', amount: '100 g', protein: 0.2, carbs: 3.92, fat: 0.88, kcal: 18 },
+          { name: 'Hacendado Canónigos Lavados', amount: '100 g', protein: 0.4, carbs: 0.7, fat: 1.8, kcal: 14 },
+        ],
+      },
+    ],
+  },
+  {
+    day: 'Sábado',
+    meals: [
+      {
+        title: 'Desayuno',
+        note: 'Base alta en proteína',
+        accent: 'from-sky-500 to-cyan-400',
+        protein: 9.92,
+        carbs: 26.38,
+        fat: 27.06,
+        kcal: 300,
+        items: [
+          { name: 'Queso Cottage', amount: '100 g', protein: 4.51, carbs: 2.68, fat: 12.49, kcal: 103 },
+          { name: 'Clara de Huevo', amount: '2 grandes', protein: 0.11, carbs: 0.48, fat: 7.19, kcal: 34 },
+          { name: 'Plátano', amount: '100 g', protein: 0.33, carbs: 22.84, fat: 1.09, kcal: 89 },
+          { name: 'Huevo', amount: '1 grande', protein: 4.97, carbs: 0.38, fat: 6.29, kcal: 74 },
+        ],
+      },
+      {
+        title: 'Almuerzo',
+        note: 'Arroz con pollo y verdura',
+        accent: 'from-emerald-500 to-lime-400',
+        protein: 21.21,
+        carbs: 67.36,
+        fat: 66.34,
+        kcal: 735,
+        items: [
+          { name: 'Aceite de Oliva', amount: '5 ml', protein: 4.6, carbs: 0, fat: 0, kcal: 41 },
+          { name: 'Cebollas', amount: '100 g', protein: 0.08, carbs: 10.11, fat: 0.92, kcal: 42 },
+          { name: 'Calabacín', amount: '100 g', protein: 0.18, carbs: 3.35, fat: 1.21, kcal: 16 },
+          { name: 'Pechuga de Pollo', amount: '200 g', protein: 15.44, carbs: 0, fat: 59.1, kcal: 390 },
+          { name: 'La Fallera Arroz Redondo', amount: '70 g', protein: 0.91, carbs: 53.9, fat: 5.11, kcal: 246 },
+        ],
+      },
+      {
+        title: 'Cena',
+        note: 'Atún con tostada',
+        accent: 'from-amber-500 to-orange-400',
+        protein: 1.56,
+        carbs: 27.58,
+        fat: 23.05,
+        kcal: 223,
+        items: [
+          { name: 'Mercadona Atún Natural', amount: '60 g', protein: 0.36, carbs: 0.42, fat: 13.8, kcal: 60 },
+          { name: 'Café', amount: '1 taza (240 ml)', protein: 0.05, carbs: 0.09, fat: 0.28, kcal: 2 },
+          { name: 'Hacendado Leche Desnatada sin Lactosa', amount: '150 ml', protein: 0.45, carbs: 7.05, fat: 4.65, kcal: 51 },
+          { name: 'Hacendado Panecillo 100% Integral', amount: '47 g', protein: 0.7, carbs: 20.02, fat: 4.32, kcal: 110 },
+        ],
+      },
+      {
+        title: 'Pasa Bocas / Otros',
+        note: 'Bocadillo con huevo',
+        accent: 'from-violet-500 to-fuchsia-400',
+        protein: 17.41,
+        carbs: 82.55,
+        fat: 21.6,
+        kcal: 569,
+        items: [
+          { name: 'Plátano', amount: '100 g', protein: 0.33, carbs: 22.84, fat: 1.09, kcal: 89 },
+          { name: 'Aceite de Oliva', amount: '5 ml', protein: 4.6, carbs: 0, fat: 0, kcal: 41 },
+          { name: 'Pan Blanco', amount: '73 g', protein: 2.4, carbs: 36.95, fat: 5.58, kcal: 194 },
+          { name: 'Huevo', amount: '2 grandes', protein: 9.94, carbs: 0.77, fat: 12.58, kcal: 147 },
+          { name: 'Patata Cruda', amount: '140 g', protein: 0.14, carbs: 21.99, fat: 2.35, kcal: 98 },
+        ],
+      },
+    ],
+  },
+  {
+    day: 'Domingo',
+    meals: [
+      {
+        title: 'Desayuno',
+        note: 'Base alta en proteína',
+        accent: 'from-sky-500 to-cyan-400',
+        protein: 9.92,
+        carbs: 26.38,
+        fat: 27.06,
+        kcal: 300,
+        items: [
+          { name: 'Huevo', amount: '1 grande', protein: 4.97, carbs: 0.38, fat: 6.29, kcal: 74 },
+          { name: 'Plátano', amount: '100 g', protein: 0.33, carbs: 22.84, fat: 1.09, kcal: 89 },
+          { name: 'Clara de Huevo', amount: '2 grandes', protein: 0.11, carbs: 0.48, fat: 7.19, kcal: 34 },
+          { name: 'Queso Cottage', amount: '100 g', protein: 4.51, carbs: 2.68, fat: 12.49, kcal: 103 },
+        ],
+      },
+      {
+        title: 'Almuerzo',
+        note: 'Macarrones con mozzarella',
+        accent: 'from-emerald-500 to-lime-400',
+        protein: 18.72,
+        carbs: 101.13,
+        fat: 29.79,
+        kcal: 681,
+        items: [
+          { name: 'Calabaza', amount: '130 g', protein: 0.13, carbs: 8.45, fat: 1.3, kcal: 34 },
+          { name: 'Hacendado Mozzarella Fresca', amount: '87 g', protein: 12.18, carbs: 1.74, fat: 14.79, kcal: 176 },
+          { name: 'Lechuga', amount: '87 g', protein: 0.12, carbs: 2.58, fat: 0.78, kcal: 12 },
+          { name: 'Hacendado Macarrones', amount: '91 g', protein: 1.36, carbs: 65.52, fat: 11.83, kcal: 329 },
+          { name: 'Aceite de Oliva', amount: '5 ml', protein: 4.6, carbs: 0, fat: 0, kcal: 41 },
+          { name: 'Plátano', amount: '100 g', protein: 0.33, carbs: 22.84, fat: 1.09, kcal: 89 },
+        ],
+      },
+      {
+        title: 'Cena',
+        note: 'Tostada dulce y café',
+        accent: 'from-amber-500 to-orange-400',
+        protein: 7.78,
+        carbs: 28.84,
+        fat: 13.45,
+        kcal: 247,
+        items: [
+          { name: 'Hacendado Panecillo 100% Integral', amount: '47 g', protein: 0.7, carbs: 20.02, fat: 4.32, kcal: 110 },
+          { name: 'Hacendado Mantequilla de Cacahuete 100%', amount: '14 g', protein: 6.58, carbs: 1.68, fat: 4.2, kcal: 84 },
+          { name: 'Café', amount: '1 taza (240 ml)', protein: 0.05, carbs: 0.09, fat: 0.28, kcal: 2 },
+          { name: 'Hacendado Leche Desnatada sin Lactosa', amount: '150 ml', protein: 0.45, carbs: 7.05, fat: 4.65, kcal: 51 },
+        ],
+      },
+      {
+        title: 'Pasa Bocas / Otros',
+        note: 'Pollo con patata',
+        accent: 'from-violet-500 to-fuchsia-400',
+        protein: 19.71,
+        carbs: 38.9,
+        fat: 58.87,
+        kcal: 571,
+        items: [
+          { name: 'Aceite de Oliva', amount: '5 ml', protein: 4.6, carbs: 0, fat: 0, kcal: 41 },
+          { name: 'Cebollas', amount: '50 g', protein: 0.04, carbs: 5.06, fat: 0.46, kcal: 21 },
+          { name: 'Patata Cruda', amount: '70 g', protein: 0.07, carbs: 11, fat: 1.18, kcal: 49 },
+          { name: 'Pechuga de Pollo', amount: '190 g', protein: 14.67, carbs: 0, fat: 56.14, kcal: 371 },
+          { name: 'Plátano', amount: '100 g', protein: 0.33, carbs: 22.84, fat: 1.09, kcal: 89 },
+        ],
+      },
+    ],
+  },
+];
+
+const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+const recipesByDay = [...weekPlan].reverse().map((plan, index) => ({
+  ...plan,
+  day: dayNames[index],
+}));
+
+const formatNumber = (value: number) =>
+  new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 }).format(value);
+
+const getMealIcon = (title: string) => {
+  if (title === 'Desayuno') return Coffee;
+  if (title === 'Cena') return Moon;
+  if (title === 'Almuerzo') return Soup;
+  return Utensils;
+};
 
 export default function App() {
-  const [view, setView] = useState<'diet' | 'planner' | 'profile' | 'progress'>(() => {
-    const savedView = localStorage.getItem('nutrifit_view');
-    return (savedView as 'diet' | 'planner' | 'profile' | 'progress') || 'diet';
-  });
-
   const [selectedDay, setSelectedDay] = useState(() => {
-    const savedDay = localStorage.getItem('nutrifit_selectedDay');
-    return savedDay ? parseInt(savedDay, 10) : 0;
-  });
-
-  const [user, setUser] = useState<UserProfile>(() => {
-    const saved = localStorage.getItem('nutrifit_user');
-    return saved ? JSON.parse(saved) : {
-      weight: 75.2,
-      height: 173,
-      age: 22,
-      gender: 'M',
-      goal: 'Pérdida de grasa',
-      weightHistory: [{ date: new Date().toISOString(), weight: 75.2 }]
-    };
-  });
-
-  const [weeklyPlan, setWeeklyPlan] = useState<WeeklyPlan>(() => {
-    const saved = localStorage.getItem('nutrifit_plan');
-    return saved ? JSON.parse(saved) : {
-      'Lunes': 'Gym',
-      'Martes': 'Boxeo',
-      'Miércoles': 'Gym',
-      'Jueves': 'Boxeo',
-      'Viernes': 'Gym + Boxeo',
-      'Sábado': 'Gym',
-      'Domingo': 'Descanso'
-    };
+    const savedDay = localStorage.getItem('recipes_selectedDay');
+    return savedDay ? Number(savedDay) : 0;
   });
 
   useEffect(() => {
-    localStorage.setItem('nutrifit_user', JSON.stringify(user));
-  }, [user]);
-
-  useEffect(() => {
-    localStorage.setItem('nutrifit_plan', JSON.stringify(weeklyPlan));
-  }, [weeklyPlan]);
-
-  useEffect(() => {
-    localStorage.setItem('nutrifit_selectedDay', selectedDay.toString());
+    localStorage.setItem('recipes_selectedDay', String(selectedDay));
   }, [selectedDay]);
 
-  useEffect(() => {
-    localStorage.setItem('nutrifit_view', view);
-  }, [view]);
-
-  const currentDayPlan = useMemo(() => {
-    const dayName = DAYS[selectedDay];
-    const trainingType = weeklyPlan[dayName];
-    return getBaseDailyPlan(dayName, trainingType);
-  }, [selectedDay, weeklyPlan]);
-
-  const adjustedDayData = useMemo(() => getAdjustedDayData(currentDayPlan, user), [currentDayPlan, user]);
-
-  const renderMealCard = (meal: any, title: string) => {
-    if (meal === 'Libre') {
-      return (
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center space-y-4">
-          <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center">
-            <Utensils className="text-emerald-500" size={32} />
-          </div>
-          <h3 className="text-2xl font-semibold text-slate-800">Comida Libre</h3>
-          <p className="text-slate-500 max-w-xs">Disfruta de una comida fuera de la dieta. ¡Te lo has ganado!</p>
-        </div>
-      );
-    }
-
-    const macros = getMealMacros(meal.ingredients);
-
-    return (
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 group hover:shadow-xl transition-all duration-500"
-      >
-        <div className="relative h-48 overflow-hidden">
-          <img 
-            src={meal.image} 
-            alt={meal.name} 
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-            referrerPolicy="no-referrer"
-          />
-          <div className="absolute top-4 left-4">
-            <span className="px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-xs font-bold text-slate-800 uppercase tracking-wider shadow-sm">
-              {title}
-            </span>
-          </div>
-        </div>
-        <div className="p-6 space-y-4">
-          <div>
-            <h3 className="text-xl font-bold text-slate-800 leading-tight">{meal.name}</h3>
-          </div>
-          
-          <div className="space-y-2">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Ingredientes</h4>
-            <ul className="grid grid-cols-1 gap-1">
-              {meal.ingredients.map((item: any, idx: number) => (
-                <li key={idx} className="flex justify-between text-sm text-slate-600">
-                  <span>{item.ingredient.name}</span>
-                  <span className="font-mono font-medium">{item.amount}{item.ingredient.unit}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="pt-4 border-t border-slate-50 grid grid-cols-4 gap-2">
-            <div className="text-center">
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Kcal</p>
-              <p className="text-sm font-bold text-slate-800">{Math.round(macros.kcal)}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Prot</p>
-              <p className="text-sm font-bold text-emerald-600">{Math.round(macros.protein)}g</p>
-            </div>
-            <div className="text-center">
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Carb</p>
-              <p className="text-sm font-bold text-blue-600">{Math.round(macros.carbs)}g</p>
-            </div>
-            <div className="text-center">
-              <p className="text-[10px] font-bold text-slate-400 uppercase">Grasa</p>
-              <p className="text-sm font-bold text-amber-600">{Math.round(macros.fat)}g</p>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    );
-  };
-
-  const renderDietView = () => (
-    <div className="space-y-8 pb-24">
-      <header className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{DAYS[selectedDay]}</h2>
-          <div className="flex items-center space-x-2 mt-1">
-            <span className="flex items-center text-sm font-medium text-slate-500">
-              {weeklyPlan[DAYS[selectedDay]] === 'Descanso' && <Moon size={14} className="mr-1" />}
-              {weeklyPlan[DAYS[selectedDay]] === 'Gym' && <Dumbbell size={14} className="mr-1" />}
-              {weeklyPlan[DAYS[selectedDay]] === 'Boxeo' && <Zap size={14} className="mr-1" />}
-              {weeklyPlan[DAYS[selectedDay]] === 'Gym + Boxeo' && <Zap size={14} className="mr-1" />}
-              {weeklyPlan[DAYS[selectedDay]]}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-3">
-          <select
-            value={selectedDay}
-            onChange={(e) => setSelectedDay(parseInt(e.target.value, 10))}
-            className="px-3 py-2 rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
-            aria-label="Seleccionar día"
-          >
-            {DAYS.map((day, index) => (
-              <option key={day} value={index}>{day}</option>
-            ))}
-          </select>
-
-          <div className="flex space-x-2">
-            <button 
-              onClick={() => setSelectedDay(prev => (prev > 0 ? prev - 1 : 6))}
-              className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 hover:bg-slate-50 transition-colors"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button 
-              onClick={() => setSelectedDay(prev => (prev < 6 ? prev + 1 : 0))}
-              className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 hover:bg-slate-50 transition-colors"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Daily Totals Bar */}
-      <div className="bg-slate-900 rounded-3xl p-6 text-white shadow-xl">
-        <div className="flex justify-between items-end mb-4">
-          <div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Calorías Totales</p>
-            <h3 className="text-4xl font-bold">{Math.round(adjustedDayData.totals.kcal)} <span className="text-lg font-normal text-slate-400">kcal</span></h3>
-          </div>
-          <div className="text-right">
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Objetivo</p>
-            <p className="text-lg font-semibold">{Math.round(adjustedDayData.targetKcal)} kcal</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/10">
-          <div>
-            <p className="text-slate-400 text-[10px] font-bold uppercase">Proteína</p>
-            <p className="text-lg font-bold text-emerald-400">{Math.round(adjustedDayData.totals.protein)}g</p>
-          </div>
-          <div>
-            <p className="text-slate-400 text-[10px] font-bold uppercase">Carbos</p>
-            <p className="text-lg font-bold text-blue-400">{Math.round(adjustedDayData.totals.carbs)}g</p>
-          </div>
-          <div>
-            <p className="text-slate-400 text-[10px] font-bold uppercase">Grasas</p>
-            <p className="text-lg font-bold text-amber-400">{Math.round(adjustedDayData.totals.fat)}g</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {renderMealCard(adjustedDayData.meals.breakfast, "Desayuno")}
-        {renderMealCard(adjustedDayData.meals.lunch, "Comida")}
-        {renderMealCard(adjustedDayData.meals.snack, "Merienda")}
-        {renderMealCard(adjustedDayData.meals.dinner, "Cena")}
-      </div>
-    </div>
+  const currentDay = recipesByDay[selectedDay];
+  const totals = useMemo(
+    () =>
+      currentDay.meals.reduce(
+        (acc, meal) => ({
+          protein: acc.protein + meal.protein,
+          carbs: acc.carbs + meal.carbs,
+          fat: acc.fat + meal.fat,
+          kcal: acc.kcal + meal.kcal,
+        }),
+        { protein: 0, carbs: 0, fat: 0, kcal: 0 },
+      ),
+    [currentDay],
   );
 
-  const weeklyStats = useMemo(() => {
-    const stats = {
-      totalKcal: 0,
-      gymDays: 0,
-      boxingDays: 0,
-      restDays: 0,
-    };
-
-    DAYS.forEach(day => {
-      const type = weeklyPlan[day];
-      const plan = getBaseDailyPlan(day, type);
-      const dayData = getAdjustedDayData(plan, user);
-      stats.totalKcal += dayData.totals.kcal;
-      if (type === 'Gym') stats.gymDays++;
-      else if (type === 'Boxeo') stats.boxingDays++;
-      else if (type === 'Gym + Boxeo') {
-        stats.gymDays++;
-        stats.boxingDays++;
-      } else stats.restDays++;
-    });
-
-    return {
-      ...stats,
-      avgKcal: stats.totalKcal / 7
-    };
-  }, [weeklyPlan, user.weight]);
-
-  const saveTemplate = (name: string) => {
-    const templates = JSON.parse(localStorage.getItem('nutrifit_templates') || '{}');
-    templates[name] = weeklyPlan;
-    localStorage.setItem('nutrifit_templates', JSON.stringify(templates));
-    alert(`Plantilla "${name}" guardada.`);
-  };
-
-  const loadTemplate = (name: string) => {
-    const templates = JSON.parse(localStorage.getItem('nutrifit_templates') || '{}');
-    if (templates[name]) {
-      setWeeklyPlan(templates[name]);
-    }
-  };
-
-  const renderPlannerView = () => (
-    <div className="space-y-8 pb-24">
-      <header className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Planificación</h2>
-          <p className="text-slate-500">Actividad física semanal.</p>
-        </div>
-        <div className="flex space-x-2">
-          <button 
-            onClick={() => {
-              const name = prompt('Nombre de la plantilla:');
-              if (name) saveTemplate(name);
-            }}
-            className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 text-slate-600 hover:text-slate-900"
-            title="Guardar Plantilla"
-          >
-            <Save size={20} />
-          </button>
-        </div>
-      </header>
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm text-center">
-          <p className="text-[10px] font-bold text-slate-400 uppercase">Media Kcal</p>
-          <p className="text-xl font-bold text-slate-800">{Math.round(weeklyStats.avgKcal)}</p>
-        </div>
-        <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm text-center">
-          <p className="text-[10px] font-bold text-slate-400 uppercase">Días Gym</p>
-          <p className="text-xl font-bold text-emerald-600">{weeklyStats.gymDays}</p>
-        </div>
-        <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm text-center">
-          <p className="text-[10px] font-bold text-slate-400 uppercase">Días Boxeo</p>
-          <p className="text-xl font-bold text-blue-600">{weeklyStats.boxingDays}</p>
-        </div>
-        <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm text-center">
-          <p className="text-[10px] font-bold text-slate-400 uppercase">Descanso</p>
-          <p className="text-xl font-bold text-amber-600">{weeklyStats.restDays}</p>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        {DAYS.map((day) => (
-          <div key={day} className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h3 className="text-xl font-bold text-slate-800">{day}</h3>
-              <p className="text-sm text-slate-500">Entrenamiento del día</p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {(['Descanso', 'Gym', 'Boxeo', 'Gym + Boxeo'] as DayType[]).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setWeeklyPlan(prev => ({ ...prev, [day]: type }))}
-                  className={`px-4 py-2 rounded-2xl text-sm font-bold transition-all duration-300 ${
-                    weeklyPlan[day] === type 
-                      ? 'bg-slate-900 text-white shadow-lg scale-105' 
-                      : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
-                  }`}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderProfileView = () => {
-    const bmr = calculateBMR(user.weight, user.height, user.age, user.gender);
-    const baseTDEE = bmr * 1.3;
-
-    return (
-      <div className="space-y-8 pb-24">
-        <header>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Mi Perfil</h2>
-          <p className="text-slate-500">Configura tus datos para adaptar la dieta.</p>
-        </header>
-
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-400 uppercase tracking-widest">Peso Actual (kg)</label>
-              <input 
-                type="number" 
-                step="0.1"
-                value={user.weight}
-                onChange={(e) => {
-                  const val = parseFloat(e.target.value);
-                  setUser(prev => ({ 
-                    ...prev, 
-                    weight: val,
-                    weightHistory: [...prev.weightHistory, { date: new Date().toISOString(), weight: val }]
-                  }));
-                }}
-                className="w-full text-4xl font-bold text-slate-900 bg-slate-50 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-400 uppercase tracking-widest">Altura (cm)</label>
-              <input 
-                type="number" 
-                value={user.height}
-                onChange={(e) => setUser(prev => ({ ...prev, height: parseFloat(e.target.value) }))}
-                className="w-full text-4xl font-bold text-slate-900 bg-slate-50 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-400 uppercase tracking-widest">Edad</label>
-              <input 
-                type="number" 
-                value={user.age}
-                onChange={(e) => setUser(prev => ({ ...prev, age: parseInt(e.target.value) }))}
-                className="w-full text-4xl font-bold text-slate-900 bg-slate-50 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-all"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-400 uppercase tracking-widest">Género</label>
-              <div className="flex space-x-2">
-                <button 
-                  onClick={() => setUser(prev => ({ ...prev, gender: 'M' }))}
-                  className={`flex-1 py-4 rounded-2xl font-bold text-lg transition-all ${user.gender === 'M' ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
-                >
-                  Hombre
-                </button>
-                <button 
-                  onClick={() => setUser(prev => ({ ...prev, gender: 'F' }))}
-                  className={`flex-1 py-4 rounded-2xl font-bold text-lg transition-all ${user.gender === 'F' ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
-                >
-                  Mujer
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 bg-blue-50 rounded-3xl flex items-start space-x-4">
-            <div className="p-2 bg-blue-100 rounded-xl text-blue-600">
-              <Info size={24} />
-            </div>
-            <div>
-              <h4 className="font-bold text-blue-900">Metabolismo y Gasto Calórico</h4>
-              <p className="text-sm text-blue-700 mt-1 space-y-2">
-                <span className="block">Tu metabolismo basal (BMR) es de <strong>{Math.round(bmr)} kcal</strong>.</span>
-                <span className="block">Tu gasto diario base (TDEE) con 5-10k pasos es de <strong>{Math.round(baseTDEE)} kcal</strong>.</span>
-                <span className="block">La app suma las calorías de tu entrenamiento diario y resta <strong>300 kcal</strong> para asegurar que estás en déficit (definición).</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderProgressView = () => {
-    const lastWeights = user.weightHistory.slice(-5);
-    const weightChange = lastWeights.length > 1 
-      ? lastWeights[lastWeights.length - 1].weight - lastWeights[0].weight
-      : 0;
-
-    return (
-      <div className="space-y-8 pb-24">
-        <header>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Progreso</h2>
-          <p className="text-slate-500">Evolución de tu peso y recomendaciones.</p>
-        </header>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Peso Actual</p>
-            <h3 className="text-4xl font-bold text-slate-900 mt-2">{user.weight} <span className="text-lg font-normal text-slate-400">kg</span></h3>
-          </div>
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Variación</p>
-            <h3 className={`text-4xl font-bold mt-2 ${weightChange <= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-              {weightChange > 0 ? '+' : ''}{formatNumber(weightChange)} <span className="text-lg font-normal opacity-50">kg</span>
-            </h3>
-          </div>
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">IMC</p>
-            <h3 className="text-4xl font-bold text-slate-900 mt-2">
-              {formatNumber(user.weight / ((user.height / 100) ** 2))}
-            </h3>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-          <h3 className="text-xl font-bold text-slate-800 mb-6">Historial de Peso</h3>
-          <div className="space-y-4">
-            {user.weightHistory.slice().reverse().map((entry, idx) => (
-              <div key={idx} className="flex justify-between items-center py-3 border-b border-slate-50 last:border-0">
-                <span className="text-slate-500">{new Date(entry.date).toLocaleDateString()}</span>
-                <span className="font-bold text-slate-800">{entry.weight} kg</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-emerald-50 rounded-3xl p-8 border border-emerald-100">
-          <div className="flex items-center space-x-3 mb-4">
-            <TrendingUp className="text-emerald-600" />
-            <h3 className="text-xl font-bold text-emerald-900">Recomendación Inteligente</h3>
-          </div>
-          <p className="text-emerald-800">
-            {weightChange < -1 
-              ? "Estás bajando de peso rápidamente. Considera aumentar ligeramente los carbohidratos en los días de Gym + Boxeo para proteger tu masa muscular."
-              : weightChange > 0
-              ? "El peso ha subido ligeramente. Asegúrate de cumplir con los días de descanso y revisa si las cantidades de aceite son las indicadas."
-              : "Tu ritmo de pérdida es óptimo para mantener músculo. Mantén la planificación actual."}
-          </p>
-        </div>
-      </div>
-    );
-  };
+  const goToPreviousDay = () => setSelectedDay((day) => (day === 0 ? recipesByDay.length - 1 : day - 1));
+  const goToNextDay = () => setSelectedDay((day) => (day === recipesByDay.length - 1 ? 0 : day + 1));
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
-      <div className="max-w-4xl mx-auto px-6 pt-12">
-        <header className="flex items-center justify-between mb-12">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center shadow-lg">
-              <Utensils className="text-white" size={24} />
+    <div className="min-h-screen overflow-hidden bg-[#f6f2ea] text-slate-950">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_34%),radial-gradient(circle_at_bottom_right,_rgba(251,146,60,0.18),_transparent_30%)]" />
+
+      <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-6 lg:px-8">
+        <header className="mb-6 rounded-[2rem] border border-white/70 bg-white/75 p-5 shadow-xl shadow-slate-200/70 backdrop-blur md:mb-8 md:p-7">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-start gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-3xl bg-slate-950 text-white shadow-lg shadow-slate-300">
+                <Utensils size={28} />
+              </div>
+              <div>
+                <p className="mb-1 flex items-center gap-2 text-xs font-black uppercase tracking-[0.28em] text-emerald-700">
+                  <CalendarDays size={15} /> Recetario semanal
+                </p>
+                <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Recetas Nutrifit</h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+                  Menú visual de lunes a domingo con las comidas y cantidades de tus capturas. Sin ajustes de peso, altura ni entrenamientos.
+                </p>
+              </div>
             </div>
-            <h1 className="text-2xl font-black tracking-tighter text-slate-900">NUTRIFIT PRO</h1>
-          </div>
-          <div className="hidden md:flex items-center space-x-1 bg-white p-1 rounded-2xl shadow-sm border border-slate-100">
-            <button onClick={() => setView('diet')} className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${view === 'diet' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Dieta</button>
-            <button onClick={() => setView('planner')} className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${view === 'planner' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Plan</button>
-            <button onClick={() => setView('progress')} className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${view === 'progress' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Progreso</button>
-            <button onClick={() => setView('profile')} className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${view === 'profile' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>Perfil</button>
+
+            <div className="grid grid-cols-4 gap-2 rounded-3xl bg-slate-950 p-3 text-white sm:min-w-80">
+              <MacroTile label="Kcal" value={Math.round(totals.kcal).toString()} />
+              <MacroTile label="Prot" value={`${formatNumber(totals.protein)}g`} />
+              <MacroTile label="Carb" value={`${formatNumber(totals.carbs)}g`} />
+              <MacroTile label="Grasa" value={`${formatNumber(totals.fat)}g`} />
+            </div>
           </div>
         </header>
 
-        <main>
+        <section className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
+            {recipesByDay.map((plan, index) => (
+              <button
+                key={plan.day}
+                onClick={() => setSelectedDay(index)}
+                className={`shrink-0 rounded-2xl px-4 py-3 text-sm font-black transition-all ${
+                  selectedDay === index
+                    ? 'bg-slate-950 text-white shadow-lg shadow-slate-300'
+                    : 'bg-white/80 text-slate-500 shadow-sm hover:bg-white hover:text-slate-950'
+                }`}
+              >
+                {plan.day}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between gap-3 md:justify-end">
+            <button
+              onClick={goToPreviousDay}
+              className="rounded-2xl bg-white/85 p-3 text-slate-800 shadow-sm transition hover:bg-white"
+              aria-label="Día anterior"
+            >
+              <ChevronLeft size={22} />
+            </button>
+            <div className="min-w-36 rounded-2xl bg-white/85 px-5 py-3 text-center shadow-sm">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Día</p>
+              <p className="text-xl font-black text-slate-950">{currentDay.day}</p>
+            </div>
+            <button
+              onClick={goToNextDay}
+              className="rounded-2xl bg-white/85 p-3 text-slate-800 shadow-sm transition hover:bg-white"
+              aria-label="Día siguiente"
+            >
+              <ChevronRight size={22} />
+            </button>
+          </div>
+        </section>
+
+        <main className="pb-10">
           <AnimatePresence mode="wait">
             <motion.div
-              key={view + selectedDay}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.3 }}
+              key={currentDay.day}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.22 }}
+              className="grid grid-cols-1 gap-5 lg:grid-cols-2"
             >
-              {view === 'diet' && renderDietView()}
-              {view === 'planner' && renderPlannerView()}
-              {view === 'profile' && renderProfileView()}
-              {view === 'progress' && renderProgressView()}
+              {currentDay.meals.map((meal) => (
+                <div key={meal.title}>
+                  <MealCard meal={meal} />
+                </div>
+              ))}
             </motion.div>
           </AnimatePresence>
         </main>
       </div>
+    </div>
+  );
+}
 
-      {/* Mobile Navigation */}
-      <nav className="md:hidden fixed bottom-6 left-6 right-6 bg-white/80 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl p-2 flex justify-around items-center z-50">
-        <button 
-          onClick={() => setView('diet')}
-          className={`p-4 rounded-2xl transition-all ${view === 'diet' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400'}`}
-        >
-          <Utensils size={24} />
-        </button>
-        <button 
-          onClick={() => setView('planner')}
-          className={`p-4 rounded-2xl transition-all ${view === 'planner' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400'}`}
-        >
-          <Calendar size={24} />
-        </button>
-        <button 
-          onClick={() => setView('progress')}
-          className={`p-4 rounded-2xl transition-all ${view === 'progress' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400'}`}
-        >
-          <TrendingUp size={24} />
-        </button>
-        <button 
-          onClick={() => setView('profile')}
-          className={`p-4 rounded-2xl transition-all ${view === 'profile' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400'}`}
-        >
-          <User size={24} />
-        </button>
-      </nav>
+function MacroTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-white/10 px-3 py-3 text-center">
+      <p className="text-[10px] font-black uppercase tracking-widest text-white/45">{label}</p>
+      <p className="mt-1 text-sm font-black text-white sm:text-base">{value}</p>
+    </div>
+  );
+}
+
+function MealCard({ meal }: { meal: Meal }) {
+  const Icon = getMealIcon(meal.title);
+
+  return (
+    <article className="group overflow-hidden rounded-[2rem] border border-white/80 bg-white shadow-xl shadow-slate-200/60 transition duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-300/70">
+      <div className={`relative min-h-40 bg-gradient-to-br ${meal.accent} p-6 text-white`}>
+        <div className="absolute inset-0 opacity-20 [background-image:radial-gradient(circle_at_20%_20%,white_0,transparent_24%),radial-gradient(circle_at_80%_0%,white_0,transparent_18%)]" />
+        <div className="relative flex items-start justify-between gap-4">
+          <div>
+            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-3xl bg-white/20 backdrop-blur">
+              <Icon size={28} />
+            </div>
+            <p className="text-xs font-black uppercase tracking-[0.26em] text-white/70">{meal.note}</p>
+            <h2 className="mt-1 text-3xl font-black tracking-tight">{meal.title}</h2>
+          </div>
+          <div className="rounded-3xl bg-white/95 px-4 py-3 text-right text-slate-950 shadow-lg">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total</p>
+            <p className="text-2xl font-black">{meal.kcal}</p>
+            <p className="-mt-1 text-xs font-bold text-slate-500">kcal</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-5 sm:p-6">
+        <div className="mb-5 grid grid-cols-3 gap-2">
+          <SmallMacro label="Proteína" value={`${formatNumber(meal.protein)}g`} className="bg-emerald-50 text-emerald-700" />
+          <SmallMacro label="Carbos" value={`${formatNumber(meal.carbs)}g`} className="bg-sky-50 text-sky-700" />
+          <SmallMacro label="Grasas" value={`${formatNumber(meal.fat)}g`} className="bg-orange-50 text-orange-700" />
+        </div>
+
+        {meal.items.length > 0 ? (
+          <div className="space-y-3">
+            {meal.items.map((item) => (
+              <div key={`${item.name}-${item.amount}`} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-black leading-tight text-slate-900">{item.name}</h3>
+                    <p className="mt-1 text-sm font-semibold text-slate-500">{item.amount}</p>
+                  </div>
+                  <div className="rounded-xl bg-white px-3 py-2 text-right shadow-sm">
+                    <p className="text-sm font-black text-slate-950">{item.kcal}</p>
+                    <p className="text-[10px] font-black uppercase text-slate-400">kcal</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs font-black">
+                  <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-700">P {formatNumber(item.protein)}g</span>
+                  <span className="rounded-full bg-sky-100 px-2.5 py-1 text-sky-700">C {formatNumber(item.carbs)}g</span>
+                  <span className="rounded-full bg-orange-100 px-2.5 py-1 text-orange-700">G {formatNumber(item.fat)}g</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+            <p className="text-lg font-black text-slate-700">Sin alimentos añadidos</p>
+            <p className="mt-1 text-sm text-slate-500">Este bloque queda vacío según la captura.</p>
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function SmallMacro({ label, value, className }: { label: string; value: string; className: string }) {
+  return (
+    <div className={`rounded-2xl px-3 py-3 text-center ${className}`}>
+      <p className="text-[10px] font-black uppercase tracking-widest opacity-60">{label}</p>
+      <p className="mt-1 text-sm font-black sm:text-base">{value}</p>
     </div>
   );
 }
